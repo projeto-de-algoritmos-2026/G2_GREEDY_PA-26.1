@@ -26,6 +26,20 @@ def create_fixed_task(payload: TaskFixedCreate):
 def list_tasks():
     return _get_service().list_tasks()
 
+@router.delete("/{task_id}")
+def delete_task(task_id: str):
+    deleted = _get_service().delete_task(task_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"message": "task removed"}
+
+@router.put("/{task_id}", response_model=TaskRead)
+def update_task(task_id: str, payload: TaskDurationCreate):
+    try:
+        return _get_service().update_duration_task(task_id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
 @router.delete("")
 def clear_tasks():
     _get_service().clear_tasks()

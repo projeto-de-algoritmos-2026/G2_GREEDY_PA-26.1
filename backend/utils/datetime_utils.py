@@ -23,7 +23,7 @@ def move_to_next_work_slot(
     work_end_time: time,
     workdays: Set[int],
 ) -> datetime:
-    current = dt
+    current = dt.replace(tzinfo=None) if dt.tzinfo is not None else dt
 
     while not is_workday(current, workdays):
         current = combine_date_and_time(current.date() + timedelta(days=1), work_start_time)

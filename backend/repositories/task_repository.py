@@ -28,5 +28,12 @@ class TaskRepository:
                 return True
         return False
 
+    def update(self, task: Task) -> Optional[Task]:
+        for index, t in enumerate(self._tasks):
+            if t.id == task.id:
+                self._tasks[index] = task
+                return task
+        return None
+
     def clear(self) -> None:
         self._tasks.clear()

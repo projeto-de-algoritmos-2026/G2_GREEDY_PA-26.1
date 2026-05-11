@@ -66,6 +66,26 @@ class SchedulerService:
     def list_tasks(self) -> List[TaskRead]:
         return [self._to_task_read(task) for task in self.repository.list_all()]
 
+    def delete_task(self, task_id: str) -> bool:
+        return self.repository.delete_by_id(task_id)
+
+    def update_duration_task(self, task_id: str, payload: TaskDurationCreate) -> TaskRead:
+        existing = self.repository.get_by_id(task_id)
+        if not existing:
+            raise ValueError(f"Task {task_id} not found")
+        updated = Task(
+            id=task_id,
+            title=payload.title,
+            task_type="duration",
+            duration_minutes=payload.duration_minutes,
+            deadline=payload.deadline,
+            priority=payload.priority,
+            notes=payload.notes,
+            created_at=existing.created_at,
+        )
+        self.repository.update(updated)
+        return self._to_task_read(updated)
+
     def clear_tasks(self) -> None:
         self.repository.clear()
 

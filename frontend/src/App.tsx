@@ -1,26 +1,20 @@
-import { FormEvent, useMemo, useState } from 'react';
-
-type Priority = 'tranquila' | 'normal' | 'importante';
-
-type Task = {
-  id: number;
-  name: string;
-  duration: number;
-  deadline: string;
-  priority: Priority;
-};
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  type Task,
+  type ScheduledTask,
+  type Priority,
+  fetchTasks,
+  createTask as apiCreateTask,
+  updateTask as apiUpdateTask,
+  deleteTask as apiDeleteTask,
+  fetchWorkweekSchedule,
+} from './api';
 
 type TaskFormState = {
   name: string;
   duration: string;
   deadline: string;
   priority: Priority;
-};
-
-type ScheduledTask = Task & {
-  position: number;
-  suggestedStart: Date;
-  suggestedEnd: Date;
 };
 
 type CalendarDay = {
@@ -39,22 +33,6 @@ const priorityClassName: Record<Priority, string> = {
   normal: 'priority-tag priority-normal',
   importante: 'priority-tag priority-importante',
 };
-
-function formatForDatetimeLocal(date: Date) {
-  const offset = date.getTimezoneOffset();
-  const normalized = new Date(date.getTime() - offset * 60_000);
-  return normalized.toISOString().slice(0, 16);
-}
-
-function buildTodayDeadline(hours: number, minutes = 0) {
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return formatForDatetimeLocal(date);
-}
-
-function parseDeadline(deadline: string) {
-  return deadline ? new Date(deadline) : null;
-}
 
 function formatDeadline(deadline: string) {
   if (!deadline) {
@@ -126,59 +104,8 @@ function isSameDay(firstDate: Date, secondDate: Date) {
   );
 }
 
-function getCurrentSchedulingReference() {
-  const reference = new Date();
-  const roundedMinutes = Math.ceil(reference.getMinutes() / 15) * 15;
-  reference.setMinutes(roundedMinutes, 0, 0);
-  return reference;
-}
-
-function sortTasksByDeadline(tasks: Task[]) {
-  return [...tasks].sort((firstTask, secondTask) => {
-    const firstDeadline = parseDeadline(firstTask.deadline);
-    const secondDeadline = parseDeadline(secondTask.deadline);
-
-    if (!firstDeadline && !secondDeadline) {
-      return firstTask.name.localeCompare(secondTask.name);
-    }
-
-    if (!firstDeadline) {
-      return 1;
-    }
-
-    if (!secondDeadline) {
-      return -1;
-    }
-
-    return firstDeadline.getTime() - secondDeadline.getTime();
-  });
-}
-
 function calculateTotalTime(tasks: Task[]) {
   return tasks.reduce((total, task) => total + task.duration, 0);
-}
-
-function generateSuggestedOrder(tasks: Task[]) {
-  const orderedTasks = sortTasksByDeadline(tasks);
-  const startReference = getCurrentSchedulingReference();
-  const scheduledTasks: ScheduledTask[] = [];
-  let cursor = new Date(startReference);
-
-  orderedTasks.forEach((task, index) => {
-    const suggestedStart = new Date(cursor);
-    const suggestedEnd = new Date(cursor.getTime() + task.duration * 60_000);
-
-    scheduledTasks.push({
-      ...task,
-      position: index + 1,
-      suggestedStart,
-      suggestedEnd,
-    });
-
-    cursor = suggestedEnd;
-  });
-
-  return scheduledTasks;
 }
 
 function buildWeeklyCalendar(tasks: ScheduledTask[], weekOffset: number) {
@@ -201,30 +128,6 @@ function buildWeeklyCalendar(tasks: ScheduledTask[], weekOffset: number) {
   };
 }
 
-const initialTasks: Task[] = [
-  {
-    id: 1,
-    name: 'Estudar Grafos',
-    duration: 90,
-    deadline: buildTodayDeadline(18, 0),
-    priority: 'importante',
-  },
-  {
-    id: 2,
-    name: 'Fazer Lista de Algoritmos',
-    duration: 120,
-    deadline: buildTodayDeadline(20, 0),
-    priority: 'normal',
-  },
-  {
-    id: 3,
-    name: 'Revisar Slides',
-    duration: 45,
-    deadline: '',
-    priority: 'tranquila',
-  },
-];
-
 const emptyFormState: TaskFormState = {
   name: '',
   duration: '',
@@ -233,39 +136,36 @@ const emptyFormState: TaskFormState = {
 };
 
 function App() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [orderedTasks, setOrderedTasks] = useState<ScheduledTask[]>([]);
   const [formState, setFormState] = useState<TaskFormState>(emptyFormState);
-  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
 
-  const orderedTasks = useMemo(() => generateSuggestedOrder(tasks), [tasks]);
   const totalTime = useMemo(() => calculateTotalTime(tasks), [tasks]);
   const weeklyCalendar = useMemo(
     () => buildWeeklyCalendar(orderedTasks, weekOffset),
     [orderedTasks, weekOffset],
   );
 
+  async function refresh() {
+    try {
+      const updatedTasks = await fetchTasks();
+      setTasks(updatedTasks);
+      const schedule = await fetchWorkweekSchedule(updatedTasks);
+      setOrderedTasks(schedule);
+    } catch (err) {
+      console.error('Erro ao atualizar dados:', err);
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
   function resetForm() {
     setFormState(emptyFormState);
     setEditingTaskId(null);
-  }
-
-  function addTask(newTask: Task) {
-    setTasks((currentTasks) => [newTask, ...currentTasks]);
-  }
-
-  function updateTask(updatedTask: Task) {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)),
-    );
-  }
-
-  function removeTask(taskId: number) {
-    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId));
-
-    if (editingTaskId === taskId) {
-      resetForm();
-    }
   }
 
   function startEditingTask(task: Task) {
@@ -278,7 +178,17 @@ function App() {
     });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function removeTask(taskId: string) {
+    try {
+      await apiDeleteTask(taskId);
+      if (editingTaskId === taskId) resetForm();
+      await refresh();
+    } catch (err) {
+      console.error('Erro ao remover tarefa:', err);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedName = formState.name.trim();
@@ -288,21 +198,24 @@ function App() {
       return;
     }
 
-    const taskPayload: Task = {
-      id: editingTaskId ?? Date.now(),
+    const taskPayload = {
       name: trimmedName,
       duration: parsedDuration,
       deadline: formState.deadline,
       priority: formState.priority,
     };
 
-    if (editingTaskId) {
-      updateTask(taskPayload);
-    } else {
-      addTask(taskPayload);
+    try {
+      if (editingTaskId) {
+        await apiUpdateTask(editingTaskId, taskPayload);
+      } else {
+        await apiCreateTask(taskPayload);
+      }
+      resetForm();
+      await refresh();
+    } catch (err) {
+      console.error('Erro ao salvar tarefa:', err);
     }
-
-    resetForm();
   }
 
   return (
