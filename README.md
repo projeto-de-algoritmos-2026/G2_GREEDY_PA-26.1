@@ -16,9 +16,9 @@ No backend, o sistema pega o conjunto de tarefas a ele passado, aplica os algori
 O frontend consome esses dados e exibe uma interface para visualizar uma agenda com a distribuição de tarefas maximizadas para maior "completude", respeitandos os *deadlines*.
 
 ## Screenshots
-![Agenda de Tarefas](images/agenda.png.png)
-![Tela de Adição de Tarefas](images/tarefa.png.png)
-![Listagem de Tarefas](images/lista_de_prioridade.png.png)
+![Agenda de Tarefas](images/agenda.png)
+![Tela de Adição de Tarefas](images/tarefa.png)
+![Listagem de Tarefas](images/lista_de_prioridade.png)
 
 ## Instalação
 Linguagem: Python e TypeScript
@@ -29,6 +29,8 @@ Framework: FastAPI e React + Vite
 - Python 3.8 ou superior
 - Node.js 20 ou superior
 - npm 10 ou superior
+
+---
 
 ### Backend
 
@@ -50,11 +52,13 @@ E:
 uvicorn main:app --reload
 ```
 
-Esse comando:
+Esses comandos fazem as seguintes ações:
 
 - cria o ambiente virtual `venv`;
 - instala as dependências do backend listadas em `requirements.txt`;
 - e inicia a API FastAPI
+
+---
 
 ### Frontend
 
