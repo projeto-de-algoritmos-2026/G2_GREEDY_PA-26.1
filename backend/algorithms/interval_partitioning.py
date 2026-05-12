@@ -9,7 +9,7 @@ def interval_partitioning(tasks: List[Task]) -> Dict[str, Any]:
     ]
 
     ordered = sorted(valid_tasks, key=lambda task: task.fixed_start)
-    heap: List[Tuple] = []  # (room_end, room_id)
+    heap: List[Tuple] = []
     assignments = []
     next_room_id = 1
 

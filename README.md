@@ -16,9 +16,9 @@ No backend, o sistema pega o conjunto de tarefas a ele passado, aplica os algori
 O frontend consome esses dados e exibe uma interface para visualizar uma agenda com a distribuição de tarefas maximizadas para maior "completude", respeitandos os *deadlines*.
 
 ## Screenshots
-![Tela de chegada](x.png)
-![Tela de pesquisa](y.png)
-![Mapa de influencia](z.png)
+![Agenda de Tarefas](images/agenda.png.png)
+![Tela de Adição de Tarefas](images/tarefa.png.png)
+![Listagem de Tarefas](images/lista_de_prioridade.png.png)
 
 ## Instalação
 Linguagem: Python e TypeScript
@@ -35,7 +35,7 @@ Framework: FastAPI e React + Vite
 Na raiz do projeto, execute:
 
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 Seguido por:
@@ -47,14 +47,14 @@ pip install -r requirements.txt
 E:
 
 ```bash
-uvicorn src.api:app --reload
+uvicorn main:app --reload
 ```
 
 Esse comando:
 
 - cria o ambiente virtual `venv`;
 - instala as dependências do backend listadas em `requirements.txt`;
-- e inicia a API FastAPI em `http://127.0.0.1:8000`.
+- e inicia a API FastAPI
 
 ### Frontend
 
@@ -66,6 +66,8 @@ npm install
 npm run dev
 ```
 
-O frontend ficará disponível no endereço informado pelo Vite, normalmente `http://127.0.0.1:5173`.
+O frontend ficará disponível no endereço informado pelo Vite, em `http://localhost:5173/`.
 
 ## Vídeo
+
+- https://youtu.be/K0XWhvFRsjM
